@@ -12,6 +12,10 @@ on:
       - docker-compose.yml
       - .github/workflows/build.yml
 
+concurrency:
+  group: venom-acore-build-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
   packages: write
