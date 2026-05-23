@@ -1,0 +1,8 @@
+.git
+.github
+*.tar
+*.tar.gz
+.DS_Store
+node_modules
+tmp
+build

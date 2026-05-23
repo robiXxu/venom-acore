@@ -1,0 +1,60 @@
+services:
+  ac-database:
+    image: mysql:8.0
+    restart: unless-stopped
+    cap_add:
+      - SYS_NICE
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DOCKER_DB_ROOT_PASSWORD:-password}
+    volumes:
+      - ac-database:/var/lib/mysql
+    networks:
+      - ac-network
+    healthcheck:
+      test: '/usr/bin/mysql --user=root --password=$$MYSQL_ROOT_PASSWORD --execute "SHOW DATABASES;"'
+      interval: 2s
+      timeout: 40s
+      retries: 20
+
+  ac-worldserver:
+    image: ghcr.io/robixxu/venom-acore:latest
+    restart: unless-stopped
+    command: ["/azerothcore/env/dist/bin/worldserver"]
+    stdin_open: true
+    tty: true
+    depends_on:
+      ac-database:
+        condition: service_healthy
+    ports:
+      - "8085:8085"
+      - "7878:7878"
+    environment:
+      AC_DATA_DIR: "/azerothcore/env/dist/data"
+      AC_LOGS_DIR: "/azerothcore/env/dist/logs"
+      AC_LOGIN_DATABASE_INFO: "ac-database;3306;root;${DOCKER_DB_ROOT_PASSWORD:-password};acore_auth"
+      AC_WORLD_DATABASE_INFO: "ac-database;3306;root;${DOCKER_DB_ROOT_PASSWORD:-password};acore_world"
+      AC_CHARACTER_DATABASE_INFO: "ac-database;3306;root;${DOCKER_DB_ROOT_PASSWORD:-password};acore_characters"
+      AC_PLAYERBOTS_DATABASE_INFO: "ac-database;3306;root;${DOCKER_DB_ROOT_PASSWORD:-password};acore_playerbots"
+    networks:
+      - ac-network
+
+  ac-authserver:
+    image: ghcr.io/robixxu/venom-acore:latest
+    restart: unless-stopped
+    command: ["/azerothcore/env/dist/bin/authserver"]
+    depends_on:
+      ac-database:
+        condition: service_healthy
+    ports:
+      - "3724:3724"
+    environment:
+      AC_LOGS_DIR: "/azerothcore/env/dist/logs"
+      AC_LOGIN_DATABASE_INFO: "ac-database;3306;root;${DOCKER_DB_ROOT_PASSWORD:-password};acore_auth"
+    networks:
+      - ac-network
+
+volumes:
+  ac-database:
+
+networks:
+  ac-network:
