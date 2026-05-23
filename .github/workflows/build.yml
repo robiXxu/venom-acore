@@ -23,10 +23,12 @@ permissions:
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository_owner }}/venom-acore
+  CACHE_SCOPE: venom-acore-linux-amd64
 
 jobs:
   build:
     runs-on: ubuntu-24.04
+    timeout-minutes: 180
 
     steps:
       - name: Checkout repo
@@ -39,7 +41,7 @@ jobs:
       - name: Login to GHCR
         uses: docker/login-action@v4
         with:
-          registry: ghcr.io
+          registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
@@ -54,6 +56,8 @@ jobs:
           platforms: linux/amd64
           push: true
           tags: |
-            ghcr.io/${{ env.IMAGE_NAME_LC }}:latest
-          cache-from: type=gha
-          cache-to: type=gha,mode=min
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_LC }}:latest
+          cache-from: |
+            type=gha,scope=${{ env.CACHE_SCOPE }}
+          cache-to: |
+            type=gha,mode=max,scope=${{ env.CACHE_SCOPE }}
