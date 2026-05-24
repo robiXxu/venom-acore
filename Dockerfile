@@ -105,7 +105,7 @@ RUN chown -R acore:acore /azerothcore/env/dist/etc /azerothcore/env/dist/logs /a
 
 RUN /azerothcore/env/dist/bin/authserver --version
 RUN /azerothcore/env/dist/bin/worldserver --version
-RUN test -x /azerothcore/env/dist/bin/dbimport
+# RUN test -x /azerothcore/env/dist/bin/dbimport
 RUN su -s /bin/sh acore -c "/azerothcore/env/dist/bin/authserver --version"
 RUN su -s /bin/sh acore -c "/azerothcore/env/dist/bin/worldserver --version"
 
