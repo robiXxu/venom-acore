@@ -90,6 +90,13 @@ WORKDIR /azerothcore
 COPY --from=builder --chown=acore:acore /azerothcore /azerothcore
 COPY --from=builder --chown=acore:acore /src/modules /azerothcore/modules-source
 
+COPY --from=builder --chown=acore:acore /src/data/sql /src/data/sql
+COPY --from=builder --chown=acore:acore /src/modules /src/modules
+
+RUN test -d /src/modules/mod-playerbots/data/sql/playerbots/base
+RUN test -f /src/modules/mod-playerbots/data/sql/playerbots/base/playerbots_account_keys.sql
+RUN test -f /src/modules/mod-ah-bot/data/sql/db-world/mod_auctionhousebot.sql
+
 RUN mkdir -p /azerothcore/env/dist/logs /azerothcore/env/dist/temp
 
 RUN cp /azerothcore/env/dist/etc/authserver.conf.dist /azerothcore/env/dist/etc/authserver.conf
@@ -102,6 +109,7 @@ RUN cp /azerothcore/env/dist/etc/modules/SoloLfg.conf.dist /azerothcore/env/dist
 RUN cp /azerothcore/env/dist/etc/modules/transmog.conf.dist /azerothcore/env/dist/etc/modules/transmog.conf
 
 RUN chown -R acore:acore /azerothcore/env/dist/etc /azerothcore/env/dist/logs /azerothcore/env/dist/temp
+
 
 RUN /azerothcore/env/dist/bin/authserver --version
 RUN /azerothcore/env/dist/bin/worldserver --version
