@@ -33,6 +33,13 @@ ARG ACORE_REF=Playerbot
 #     && rm -rf /var/lib/apt/lists/*
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     apt-get update && apt-get install -y --no-install-recommends \
+      git \
+      cmake \
+      make \
+      gcc \
+      g++ \
+      clang \
+      ccache \
       libmysqlclient21 \
       libssl3 \
       libbz2-1.0 \
@@ -45,6 +52,7 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
       libboost-thread1.83.0 \
       libboost-regex1.83.0 \
       mysql-client \
+      p7zip-full \
       curl \
       ca-certificates \
     && rm -rf /var/lib/apt/lists/*
