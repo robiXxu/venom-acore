@@ -10,27 +10,6 @@ ARG BUILD_JOBS=4
 ARG ACORE_REPO=https://github.com/mod-playerbots/azerothcore-wotlk.git
 ARG ACORE_REF=Playerbot
 
-# RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
-#     apt-get update && apt-get install -y --no-install-recommends \
-#       git \
-#       cmake \
-#       make \
-#       gcc \
-#       g++ \
-#       clang \
-#       ccache \
-#       libmysqlclient-dev \
-#       libssl-dev \
-#       libbz2-dev \
-#       libreadline-dev \
-#       libncurses-dev \
-#       libboost-all-dev \
-#       mysql-client \
-#       p7zip-full \
-#       wget \
-#       curl \
-#       ca-certificates \
-#     && rm -rf /var/lib/apt/lists/*
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     apt-get update && apt-get install -y --no-install-recommends \
       git \
@@ -40,17 +19,12 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
       g++ \
       clang \
       ccache \
-      libmysqlclient21 \
-      libssl3 \
-      libbz2-1.0 \
-      libreadline8t64 \
-      libncurses6 \
-      libboost-filesystem1.83.0 \
-      libboost-iostreams1.83.0 \
-      libboost-program-options1.83.0 \
-      libboost-system1.83.0 \
-      libboost-thread1.83.0 \
-      libboost-regex1.83.0 \
+      libmysqlclient-dev \
+      libssl-dev \
+      libbz2-dev \
+      libreadline-dev \
+      libncurses-dev \
+      libboost-all-dev \
       mysql-client \
       p7zip-full \
       curl \
@@ -84,11 +58,9 @@ RUN --mount=type=cache,target=/root/.cache/ccache \
 
 RUN make install
 
-RUN strip \
-      /azerothcore/env/dist/bin/worldserver \
-      /azerothcore/env/dist/bin/authserver \
-      /azerothcore/env/dist/bin/dbimport \
-    || true
+RUN strip /azerothcore/env/dist/bin/worldserver || true
+RUN strip /azerothcore/env/dist/bin/authserver || true
+RUN strip /azerothcore/env/dist/bin/dbimport || true
 
 
 FROM ubuntu:24.04 AS runtime
@@ -102,7 +74,12 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
       libbz2-1.0 \
       libreadline8t64 \
       libncurses6 \
-      libboost-all-dev \
+      libboost-filesystem1.83.0 \
+      libboost-iostreams1.83.0 \
+      libboost-program-options1.83.0 \
+      libboost-system1.83.0 \
+      libboost-thread1.83.0 \
+      libboost-regex1.83.0 \
       mysql-client \
       curl \
       ca-certificates \
@@ -131,15 +108,17 @@ RUN cp /azerothcore/env/dist/etc/modules/playerbots.conf.dist /azerothcore/env/d
 RUN cp /azerothcore/env/dist/etc/modules/SoloLfg.conf.dist /azerothcore/env/dist/etc/modules/SoloLfg.conf
 RUN cp /azerothcore/env/dist/etc/modules/transmog.conf.dist /azerothcore/env/dist/etc/modules/transmog.conf
 
-RUN chown -R acore:acore /azerothcore/env/dist/etc /azerothcore/env/dist/logs /azerothcore/env/dist/temp
-
+RUN chown -R acore:acore \
+      /azerothcore/env/dist/etc \
+      /azerothcore/env/dist/logs \
+      /azerothcore/env/dist/temp
 
 RUN /azerothcore/env/dist/bin/authserver --version
 RUN /azerothcore/env/dist/bin/worldserver --version
 
 RUN ldd /azerothcore/env/dist/bin/worldserver | grep "not found" && exit 1 || true
 RUN ldd /azerothcore/env/dist/bin/authserver | grep "not found" && exit 1 || true
-# RUN test -x /azerothcore/env/dist/bin/dbimport
+
 RUN su -s /bin/sh acore -c "/azerothcore/env/dist/bin/authserver --version"
 RUN su -s /bin/sh acore -c "/azerothcore/env/dist/bin/worldserver --version"
 
