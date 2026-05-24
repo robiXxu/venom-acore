@@ -88,8 +88,6 @@ RUN useradd --system --create-home --home-dir /azerothcore --shell /usr/sbin/nol
 WORKDIR /azerothcore
 
 COPY --from=builder --chown=acore:acore /azerothcore /azerothcore
-COPY --from=builder --chown=acore:acore /src/modules /azerothcore/modules-source
-
 COPY --from=builder --chown=acore:acore /src/data/sql /src/data/sql
 COPY --from=builder --chown=acore:acore /src/modules /src/modules
 
