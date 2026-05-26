@@ -23,7 +23,6 @@ permissions:
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository_owner }}/venom-acore
-  CACHE_SCOPE: venom-acore-linux-amd64
 
 jobs:
   build:
@@ -31,24 +30,6 @@ jobs:
     timeout-minutes: 180
 
     steps:
-      - name: Free disk space
-        run: |
-          echo "Before cleanup:"
-          df -h
-
-          sudo rm -rf /usr/share/dotnet
-          sudo rm -rf /opt/ghc
-          sudo rm -rf /usr/local/lib/android
-          sudo rm -rf /opt/hostedtoolcache/CodeQL
-          sudo rm -rf /opt/hostedtoolcache/Python
-          sudo rm -rf /opt/hostedtoolcache/node
-          sudo rm -rf /opt/hostedtoolcache/go
-          sudo rm -rf /opt/az
-          sudo docker system prune -af || true
-
-          echo "After cleanup:"
-          df -h
-
       - name: Checkout repo
         uses: actions/checkout@v5
 
@@ -77,7 +58,3 @@ jobs:
             BUILD_JOBS=2
           tags: |
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_LC }}:latest
-          cache-from: |
-            type=gha,scope=${{ env.CACHE_SCOPE }}
-          cache-to: |
-            type=gha,mode=min,scope=${{ env.CACHE_SCOPE }}
