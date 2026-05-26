@@ -4,9 +4,9 @@ FROM ubuntu:24.04 AS builder
 
 ENV DEBIAN_FRONTEND=noninteractive
 ENV CCACHE_DIR=/root/.cache/ccache
-ENV CCACHE_MAXSIZE=5G
+ENV CCACHE_MAXSIZE=2G
 
-ARG BUILD_JOBS=4
+ARG BUILD_JOBS=2
 ARG ACORE_REPO=https://github.com/mod-playerbots/azerothcore-wotlk.git
 ARG ACORE_REF=Playerbot
 
