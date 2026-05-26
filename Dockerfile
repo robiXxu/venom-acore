@@ -54,13 +54,22 @@ RUN --mount=type=cache,target=/root/.cache/ccache \
       -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
 
 RUN --mount=type=cache,target=/root/.cache/ccache \
-    make -j"${BUILD_JOBS}"
+    if [ "${BUILD_JOBS}" = "auto" ]; then \
+      make -j"$(nproc)"; \
+    else \
+      make -j"${BUILD_JOBS}"; \
+    fi
 
 RUN make install
 
-RUN strip /azerothcore/env/dist/bin/worldserver || true
-RUN strip /azerothcore/env/dist/bin/authserver || true
-RUN strip /azerothcore/env/dist/bin/dbimport || true
+# Copy all module config templates into the standard AzerothCore module config dir.
+# Then create active .conf files from .conf.dist without overwriting existing files.
+RUN set -eu; \
+    mkdir -p /azerothcore/env/dist/etc/modules; \
+    find /src/modules -path "*/conf/*.conf.dist" -type f -exec cp -vn {} /azerothcore/env/dist/etc/modules/ \; ; \
+    find /azerothcore/env/dist/etc/modules -name "*.conf.dist" -type f -exec sh -c 'cp -n "$1" "${1%.dist}"' _ {} \;
+
+RUN strip /azerothcore/env/dist/bin/worldserver /azerothcore/env/dist/bin/authserver || true
 
 
 FROM ubuntu:24.04 AS runtime
@@ -92,21 +101,42 @@ WORKDIR /azerothcore
 COPY --from=builder --chown=acore:acore /azerothcore /azerothcore
 COPY --from=builder --chown=acore:acore /src/data/sql /src/data/sql
 COPY --from=builder --chown=acore:acore /src/modules /src/modules
+COPY --from=builder --chown=acore:acore /tmp/modules.lock /tmp/modules.lock
 
-RUN test -d /src/modules/mod-playerbots/data/sql/playerbots/base
-RUN test -f /src/modules/mod-playerbots/data/sql/playerbots/base/playerbots_account_keys.sql
-RUN test -f /src/modules/mod-ah-bot/data/sql/db-world/mod_auctionhousebot.sql
+# Verify every module from modules.lock exists in /src/modules.
+RUN set -eu; \
+    while IFS='|' read -r name repo ref; do \
+      [ -z "$name" ] && continue; \
+      case "$name" in \#*) continue ;; esac; \
+      test -d "/src/modules/$name"; \
+    done < /tmp/modules.lock
+
+# Optional build log visibility: list module configs and SQL files.
+# Keep this while debugging; remove later if you want quieter builds.
+RUN set -eu; \
+    while IFS='|' read -r name repo ref; do \
+      [ -z "$name" ] && continue; \
+      case "$name" in \#*) continue ;; esac; \
+      echo "== $name =="; \
+      if [ -d "/src/modules/$name/conf" ]; then \
+        find "/src/modules/$name/conf" -type f -name "*.conf.dist" | sort; \
+      else \
+        echo "No conf dir"; \
+      fi; \
+      if [ -d "/src/modules/$name/data/sql" ]; then \
+        find "/src/modules/$name/data/sql" -type f -name "*.sql" | sort; \
+      else \
+        echo "No data/sql dir"; \
+      fi; \
+    done < /tmp/modules.lock
 
 RUN mkdir -p /azerothcore/env/dist/logs /azerothcore/env/dist/temp
 
-RUN cp /azerothcore/env/dist/etc/authserver.conf.dist /azerothcore/env/dist/etc/authserver.conf
-RUN cp /azerothcore/env/dist/etc/worldserver.conf.dist /azerothcore/env/dist/etc/worldserver.conf
+RUN cp -n /azerothcore/env/dist/etc/authserver.conf.dist /azerothcore/env/dist/etc/authserver.conf
+RUN cp -n /azerothcore/env/dist/etc/worldserver.conf.dist /azerothcore/env/dist/etc/worldserver.conf
 
-RUN cp /azerothcore/env/dist/etc/modules/AutoBalance.conf.dist /azerothcore/env/dist/etc/modules/AutoBalance.conf
-RUN cp /azerothcore/env/dist/etc/modules/mod_ahbot.conf.dist /azerothcore/env/dist/etc/modules/mod_ahbot.conf
-RUN cp /azerothcore/env/dist/etc/modules/playerbots.conf.dist /azerothcore/env/dist/etc/modules/playerbots.conf
-RUN cp /azerothcore/env/dist/etc/modules/SoloLfg.conf.dist /azerothcore/env/dist/etc/modules/SoloLfg.conf
-RUN cp /azerothcore/env/dist/etc/modules/transmog.conf.dist /azerothcore/env/dist/etc/modules/transmog.conf
+# Ensure active module config files exist for every installed .conf.dist.
+RUN find /azerothcore/env/dist/etc/modules -name "*.conf.dist" -type f -exec sh -c 'cp -n "$1" "${1%.dist}"' _ {} \;
 
 RUN chown -R acore:acore \
       /azerothcore/env/dist/etc \
