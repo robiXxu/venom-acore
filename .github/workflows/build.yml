@@ -1,6 +1,7 @@
 name: Build Venom AzerothCore image
 
 on:
+  workflow_dispatch:
   push:
     branches:
       - main
@@ -47,6 +48,7 @@ jobs:
 
           echo "After cleanup:"
           df -h
+
       - name: Checkout repo
         uses: actions/checkout@v5
 
