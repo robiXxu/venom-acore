@@ -1,7 +1,6 @@
 name: Build Venom AzerothCore image
 
 on:
-  workflow_dispatch:
   push:
     branches:
       - main
